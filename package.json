@@ -5,7 +5,7 @@
   "author": "bostaunieux",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bostaunieux/mysmartblinds-bridge.git"
+    "url": "https://github.com/bostaunieux/mysmartblinds-mqtt-bridge.git"
   },
   "license": "MIT",
   "main": "lib/index.js",
