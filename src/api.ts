@@ -91,15 +91,26 @@ export default class Api {
     }
   }
 
-  public async getStatus(blinds: Array<string>): Promise<Array<BlindState> | null> {
+  /**
+   * Get the current state of the requested blinds
+   *
+   * @param blinds blind ids
+   */
+  public async getBlindsState(blinds: Array<string>): Promise<Array<BlindState> | null> {
     try {
-      return await this.requestStatus(blinds);
+      return await this.requestBlindsState(blinds);
     } catch (error) {
       console.error("Failed getting blinds status", error);
       return null;
     }
   }
 
+  /**
+   * Set the tilt position to the provided blinds
+   *
+   * @param blinds blind ids
+   * @param position numeric blind position from 0 to 100
+   */
   public async updateTiltPosition(blinds: Array<string>, position: number): Promise<Array<BlindState> | null> {
     try {
       return await this.requestPositionUpdate(blinds, position);
@@ -157,7 +168,7 @@ export default class Api {
     };
   }
 
-  private async requestStatus(blinds: Array<string>): Promise<Array<BlindState>> {
+  private async requestBlindsState(blinds: Array<string>): Promise<Array<BlindState>> {
     console.debug("Requesting blinds status");
 
     const headers = await this.getHeaders();
@@ -166,7 +177,6 @@ export default class Api {
     const response = await axios.post(
       "https://api.mysmartblinds.com/v1/graphql",
       {
-        // 2020-11-21 - confirmed battery field is batteryLevel
         query: QUERY_GET_BLINDS_STATE,
         variables: { blinds },
       },
@@ -187,7 +197,6 @@ export default class Api {
     const response = await axios.post<GetUserInfoResponse>(
       "https://api.mysmartblinds.com/v1/graphql",
       {
-        // 2020-11-21 - confirmed battery field is batteryPercent
         query: QUERY_GET_USER_INFO,
         variables: null,
       },
@@ -225,7 +234,6 @@ export default class Api {
     const response = await axios.post<UpdateBlindsResponse>(
       "https://api.mysmartblinds.com/v1/graphql",
       {
-        // 2020-11-21 - confirmed battery field is batteryLevel
         query: MUTATION_UPDATE_BLINDS_POSITION,
         variables: { position, blinds },
       },
