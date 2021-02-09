@@ -18,9 +18,19 @@ if (!mqttHost) {
   process.exit(1);
 }
 
+if (mqttPrefix.includes("/")) {
+  console.error("Mqtt prefix property cannot contain any forward slashes");
+  process.exit(1);
+}
+
 const api = new Api({
   username,
   password,
 });
 
-new Controller({ mqttHost, mqttPrefix, api }).initialize();
+try {
+  new Controller({ mqttHost, mqttPrefix, api }).initialize();
+} catch (e) {
+  console.error("Encountered fatal error: %s", e);
+  process.exit(1);
+}

@@ -54,7 +54,7 @@ Topic payload format:
 	"id": "FGVeSeLK",       // blind identifier / encoded mac address
 	"batteryLevel": 90,     // battery level percentage
 	"signalStrength": -75,  // RSSI
-	"position": 0,          // numeric blind position from 0 - 100
+	"position": 0,          // numeric blind position from 0 - 180
 	"state": "closed"       // "open" or "closed"
 }
 ```
