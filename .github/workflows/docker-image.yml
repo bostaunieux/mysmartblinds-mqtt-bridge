@@ -5,7 +5,7 @@ on:
     types: [published]
 
 jobs:
-  multi-registries:
+  main:
     runs-on: ubuntu-latest
     steps:
       - 
