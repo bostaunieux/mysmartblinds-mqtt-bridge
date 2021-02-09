@@ -1,8 +1,8 @@
 name: Publish Docker image
 
 on:
-  push:
-    branches: master
+  release:
+    types: [published]
 
 jobs:
   multi-registries:
@@ -34,4 +34,3 @@ jobs:
           push: true
           tags: |
             ghcr.io/bostaunieux/mysmartblinds-mqtt-bridge:latest
-            ghcr.io/bostaunieux/mysmartblinds-mqtt-bridge:1.0.0
