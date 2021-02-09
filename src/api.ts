@@ -70,16 +70,14 @@ interface GetUserInfoResponse {
 }
 
 export default class Api {
-  private clientId: string;
+  private clientId: string = "1d1c3vuqWtpUt1U577QX5gzCJZzm8WOB";
   private username: string;
   private password: string;
-  private storedToken: TokenDetails | null;
+  private storedToken?: TokenDetails;
 
   constructor({ username, password }: ApiConfg) {
-    this.clientId = "1d1c3vuqWtpUt1U577QX5gzCJZzm8WOB";
     this.username = username;
     this.password = password;
-    this.storedToken = null;
   }
 
   public async findBlinds(): Promise<Array<BlindInfo> | null> {

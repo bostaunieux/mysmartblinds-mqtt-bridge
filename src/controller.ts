@@ -18,23 +18,19 @@ const normalize = (name: string): string => name.replace(/\s/g, "_").toLowerCase
 
 export default class Controller {
   private api: Api;
-  private client: MqttClient | null;
   private mqttHost: string;
   private mqttPrefix: string;
-  private blindsByRoom: Map<string, Map<string, BlindInfo>>;
-  private blindsById: Map<string, BlindInfo>;
-  private updateQueue: Set<QueuedBlindUpdate>;
-  private updateTimer: NodeJS.Timeout | null;
+  private client?: MqttClient;
+  private updateTimer?: NodeJS.Timeout;
+  
+  private updateQueue = new Set<QueuedBlindUpdate>();
+  private blindsByRoom = new Map<string, Map<string, BlindInfo>>();;
+  private blindsById = new Map<string, BlindInfo>();
 
-  constructor({ mqttHost, mqttPrefix, api }: ControllerConfg) {
+  constructor({ api, mqttHost, mqttPrefix }: ControllerConfg) {
     this.api = api;
     this.mqttHost = mqttHost;
     this.mqttPrefix = mqttPrefix;
-    this.client = null;
-    this.blindsByRoom = new Map<string, Map<string, BlindInfo>>();
-    this.blindsById = new Map<string, BlindInfo>();
-    this.updateQueue = new Set<QueuedBlindUpdate>();
-    this.updateTimer = null;
   }
 
   /**
@@ -95,7 +91,6 @@ export default class Controller {
     const blinds = await this.api.findBlinds();
 
     if (!blinds || blinds.length === 0) {
-      console.error("Did not find any blinds; exiting");
       throw new Error("Did not find any blinds");
     }
 
@@ -146,7 +141,7 @@ export default class Controller {
       this.updateTimer = setTimeout(() => {
         const requests = [...this.updateQueue];
 
-        this.updateTimer = null;
+        this.updateTimer = undefined;
         this.updateQueue.clear();
 
         // first iterate through the list to figure out the position each blind should get;
