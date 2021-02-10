@@ -14,6 +14,8 @@ interface QueuedBlindUpdate {
   position: number;
 }
 
+const CONNECTION_RETRY_DELAY_MS = 30 * 1000;
+
 const normalize = (name: string): string => name.replace(/\s/g, "_").toLowerCase();
 
 export default class Controller {
@@ -42,17 +44,13 @@ export default class Controller {
     // reset the connection before initializing, in case of reinitialization
     this.client?.end();
 
-    this.client = mqtt.connect(this.mqttHost, {
-      will: {
-        topic: `${this.mqttPrefix}/availability`,
-        payload: "offline",
-        qos: 1,
-        retain: true,
-      },
-    });
+    this.client = this.getConnection();
 
     this.client.on("error", (error) => {
       console.error(error);
+
+      this.client?.end();
+      this.reconnect();
     });
 
     this.client.on("connect", () => {
@@ -128,6 +126,28 @@ export default class Controller {
 
     blindsResponse && this.notifyStateChange(blindsResponse);
   }, 10000);
+
+  private getConnection = () => {
+    return mqtt.connect(this.mqttHost, {
+      will: {
+        topic: `${this.mqttPrefix}/availability`,
+        payload: "offline",
+        qos: 1,
+        retain: true,
+      },
+    });
+  }
+
+  private reconnect = () => {
+    setTimeout(() =>{
+      try {
+        this.client = this.getConnection();
+      } catch (e) {
+        console.error('Connection failed with error: %s; will retry after a delay', e);
+        this.reconnect();
+      }
+    }, CONNECTION_RETRY_DELAY_MS);
+  }
 
   /**
    * Queue requests to update position so we can reduce the total number of service calls. This will
