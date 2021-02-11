@@ -47,10 +47,7 @@ export default class Controller {
     this.client = this.getConnection();
 
     this.client.on("error", (error) => {
-      console.error(error);
-
-      this.client?.end();
-      this.reconnect();
+      console.error('MQTT connection error: %s; will retry after a delay', error);
     });
 
     this.client.on("connect", () => {
@@ -135,18 +132,8 @@ export default class Controller {
         qos: 1,
         retain: true,
       },
+      reconnectPeriod: CONNECTION_RETRY_DELAY_MS
     });
-  }
-
-  private reconnect = () => {
-    setTimeout(() =>{
-      try {
-        this.client = this.getConnection();
-      } catch (e) {
-        console.error('Connection failed with error: %s; will retry after a delay', e);
-        this.reconnect();
-      }
-    }, CONNECTION_RETRY_DELAY_MS);
   }
 
   /**
