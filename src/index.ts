@@ -8,6 +8,15 @@ const {
   MQTT_PREFIX: mqttPrefix = "mysmartblinds",
 } = process.env;
 
+process.on("exit", function () {
+  console.info("Exiting...");
+});
+
+// catch ctrl+c event and exit normally
+process.on("SIGINT", function () {
+  process.exit(2);
+});
+
 if (!username || !password) {
   console.error("Missing required username and/or password properties");
   process.exit(1);
@@ -23,14 +32,16 @@ if (mqttPrefix.includes("/")) {
   process.exit(1);
 }
 
-const api = new Api({
-  username,
-  password,
-});
+const init = async () => {
+  const api = new Api({ username, password });
 
-try {
-  new Controller({ mqttHost, mqttPrefix, api }).initialize();
-} catch (e) {
-  console.error("Encountered fatal error: %s", e);
-  process.exit(1);
-}
+  try {
+    const controller = new Controller({ api, mqttHost, mqttPrefix });
+    await controller.initialize();
+  } catch (e) {
+    console.error("Encountered fatal error: %s", e);
+    process.exit(1);
+  }
+};
+
+init();

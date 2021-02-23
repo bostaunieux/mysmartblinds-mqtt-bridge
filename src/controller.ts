@@ -3,9 +3,12 @@ import mqtt, { MqttClient } from "mqtt";
 import Api from "./api";
 import { BlindInfo, BlindState } from "./config";
 
-interface ControllerConfg {
+interface ControllerProps {
+  /** MQTT broker host */
   mqttHost: string;
+  /** MQTT topic prefix for all topics being created */
   mqttPrefix: string;
+  /** API connection */
   api: Api;
 }
 
@@ -14,22 +17,28 @@ interface QueuedBlindUpdate {
   position: number;
 }
 
-const CONNECTION_RETRY_DELAY_MS = 30 * 1000;
+const BLINDS_UPDATE_THROTTLE_MS = 10 * 1000; // 10 seconds
+
+const CONNECTION_RETRY_DELAY_MS = 30 * 1000; // 30 seconds
 
 const normalize = (name: string): string => name.replace(/\s/g, "_").toLowerCase();
 
+/**
+ * Class for managing the connection to the MQTT broker and processing requests on the
+ * MySmartBlinds hub.
+ */
 export default class Controller {
   private api: Api;
   private mqttHost: string;
   private mqttPrefix: string;
   private client?: MqttClient;
   private updateTimer?: NodeJS.Timeout;
-  
+
   private updateQueue = new Set<QueuedBlindUpdate>();
-  private blindsByRoom = new Map<string, Map<string, BlindInfo>>();;
+  private blindsByRoom = new Map<string, Map<string, BlindInfo>>();
   private blindsById = new Map<string, BlindInfo>();
 
-  constructor({ api, mqttHost, mqttPrefix }: ControllerConfg) {
+  constructor({ api, mqttHost, mqttPrefix }: ControllerProps) {
     this.api = api;
     this.mqttHost = mqttHost;
     this.mqttPrefix = mqttPrefix;
@@ -47,7 +56,7 @@ export default class Controller {
     this.client = this.getConnection();
 
     this.client.on("error", (error) => {
-      console.error('MQTT connection error: %s; will retry after a delay', error);
+      console.error("MQTT connection error: %s; will retry after a delay", error);
     });
 
     this.client.on("connect", () => {
@@ -121,8 +130,8 @@ export default class Controller {
 
     const blindsResponse = await this.api.getBlindsState(blindIds);
 
-    blindsResponse && this.notifyStateChange(blindsResponse);
-  }, 10000);
+    blindsResponse && this.publishStateChange(blindsResponse);
+  }, BLINDS_UPDATE_THROTTLE_MS);
 
   private getConnection = () => {
     return mqtt.connect(this.mqttHost, {
@@ -132,9 +141,9 @@ export default class Controller {
         qos: 1,
         retain: true,
       },
-      reconnectPeriod: CONNECTION_RETRY_DELAY_MS
+      reconnectPeriod: CONNECTION_RETRY_DELAY_MS,
     });
-  }
+  };
 
   /**
    * Queue requests to update position so we can reduce the total number of service calls. This will
@@ -182,10 +191,10 @@ export default class Controller {
     console.info("Changing position to: %s for blinds: %s", position, blindIds.join(", "));
     const updatedBlinds = await this.api.updateTiltPosition(blindIds, position);
 
-    updatedBlinds && this.notifyStateChange(updatedBlinds);
+    updatedBlinds && this.publishStateChange(updatedBlinds);
   };
 
-  private notifyStateChange = (updatedBlinds: Array<BlindState>) => {
+  private publishStateChange = (updatedBlinds: Array<BlindState>) => {
     updatedBlinds.forEach((blind) => {
       const position = blind.position < 4 ? 0 : blind.position > 176 ? 180 : blind.position;
       const state = position === 0 || position === 180 ? "closed" : "open";
@@ -197,7 +206,7 @@ export default class Controller {
         return;
       }
 
-      const mqttTopic = `${this.getMqttTopic(blindEntry)}`;
+      const mqttTopic = this.getMqttTopic(blindEntry);
 
       this.client?.publish(`${mqttTopic}/state`, JSON.stringify({ ...blind, position, state }), { retain: true });
       this.client?.publish(`${mqttTopic}/position`, position.toString(), {

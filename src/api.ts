@@ -7,13 +7,17 @@ import {
   QUERY_GET_USER_INFO,
 } from "./config";
 
-interface ApiConfg {
+interface ApiProps {
+  /** mysmartblinds account username */
   username: string;
+  /** mysmartblinds account password */
   password: string;
 }
 
 interface TokenDetails {
+  /** token id */
   id: string;
+  /** expiration timestamp */
   expiry: number;
 }
 
@@ -69,17 +73,23 @@ interface GetUserInfoResponse {
   data: GetUserInfo;
 }
 
+/**
+ * MySmartBlinds hub connection
+ */
 export default class Api {
   private clientId: string = "1d1c3vuqWtpUt1U577QX5gzCJZzm8WOB";
   private username: string;
   private password: string;
   private storedToken?: TokenDetails;
 
-  constructor({ username, password }: ApiConfg) {
+  constructor({ username, password }: ApiProps) {
     this.username = username;
     this.password = password;
   }
 
+  /**
+   * Find all available blinds on MySmartBlinds account
+   */
   public async findBlinds(): Promise<Array<BlindInfo> | null> {
     try {
       return await this.requestBlinds();
