@@ -73,11 +73,13 @@ interface GetUserInfoResponse {
   data: GetUserInfo;
 }
 
+const APP_USER_AGENT = "MySmartBlinds/5 CFNetwork/1121.2.2 Darwin/19.3.0";
+export const APP_CLIENT_ID = "1d1c3vuqWtpUt1U577QX5gzCJZzm8WOB";
+
 /**
  * MySmartBlinds hub connection
  */
 export default class Api {
-  private clientId: string = "1d1c3vuqWtpUt1U577QX5gzCJZzm8WOB";
   private username: string;
   private password: string;
   private storedToken?: TokenDetails;
@@ -154,14 +156,14 @@ export default class Api {
       {
         scope: "openid offline_access",
         grant_type: "password",
-        client_id: this.clientId,
+        client_id: APP_CLIENT_ID,
         connection: "Username-Password-Authentication",
-        device: "MySmartBlinds Homebridge",
+        device: "MySmartBlinds MQTT",
         username: this.username,
         password: this.password,
       },
       {
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "User-Agent": APP_USER_AGENT },
       }
     );
 
@@ -256,6 +258,9 @@ export default class Api {
   private formatBlindsResponse(response: Array<UpdateBlindsResponseBlind>): Array<BlindState> {
     return response.map((blind) => ({
       id: blind.encodedMacAddress,
+      // hub doesn't always report a battery level, so if it's 0, set a default low value
+      // this eases integration with platforms like homebridge/home assistant that will complain
+      // about low batteries
       batteryLevel: blind.batteryLevel == 0 ? 20 : blind.batteryLevel,
       signalStrength: blind.rssi,
       position: blind.position,
@@ -267,8 +272,8 @@ export default class Api {
 
     return {
       Authorization: `Bearer ${token}`,
-      "auth0-client-id": this.clientId,
-      "User-Agent": "MySmartBlinds/5 CFNetwork/1121.2.2 Darwin/19.3.0",
+      "auth0-client-id": APP_CLIENT_ID,
+      "User-Agent": APP_USER_AGENT,
       "Content-Type": "application/json",
     };
   }
