@@ -1,5 +1,7 @@
 # mysmartblinds-mqtt-bridge
 
+[![build](https://github.com/bostaunieux/mysmartblinds-mqtt-bridge/actions/workflows/node-ci.yml/badge.svg)](https://github.com/bostaunieux/mysmartblinds-mqtt-bridge/actions/workflows/node-ci.yml)
+
 ## Overview
 
 Control and monitor MySmartBlinds blinds connected to a MySmartBlinds hub. Blinds are auto-discovered though the hub, and MQTT topics are created for each to monitor their state and send tilt commands. This currently does not poll the blinds state, so updates to blind positions done through the MySmartBlinds app
