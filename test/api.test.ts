@@ -13,8 +13,6 @@ import {
   mockUpdateBlindsPosition,
 } from "./fixtures";
 
-const TEST_HOST = "localhost";
-
 describe("Api", () => {
   let api: Api;
 

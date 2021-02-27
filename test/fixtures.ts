@@ -15,12 +15,13 @@ const LOGIN_REQUEST_BODY = {
   password: MOCK_PASSWORD,
 };
 
+export const MOCK_ROOM = { id: "12345", name: "Office", deleted: false };
+
 export const MOCK_BLIND_1 = {
   encodedMacAddress: "XX:XX:XX:XX",
   name: "One",
   deleted: false,
-  encodedPasskey: "KEY-1",
-  roomId: 12345,
+  roomId: MOCK_ROOM.id,
   batteryPercent: 99,
 };
 
@@ -35,8 +36,7 @@ export const MOCK_BLIND_2 = {
   encodedMacAddress: "YY:YY:YY:YY",
   name: "Two",
   deleted: false,
-  encodedPasskey: "KEY-2",
-  roomId: 12345,
+  roomId: MOCK_ROOM.id,
   batteryPercent: 99,
 };
 
@@ -62,7 +62,7 @@ export const mockFindBlinds = (): Scope =>
     .reply(200, {
       data: {
         user: {
-          rooms: [{ id: 12345, name: "Office", deleted: false }],
+          rooms: [MOCK_ROOM],
           blinds: [MOCK_BLIND_1, MOCK_BLIND_2],
         },
       },
@@ -74,6 +74,7 @@ export const mockGetBlindsState = (requestedBlinds: Array<string>): Scope =>
       query: QUERY_GET_BLINDS_STATE,
       variables: { blinds: requestedBlinds },
     })
+    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     .reply(200, (uri, requestBody: Record<string, any>) => {
       const requestBlinds = requestBody.variables.blinds;
       const responseBlinds = [];
@@ -92,6 +93,7 @@ export const mockUpdateBlindsPosition = (requestedBlinds: Array<string>, request
       query: MUTATION_UPDATE_BLINDS_POSITION,
       variables: { blinds: requestedBlinds, position: requestedPosition },
     })
+    /* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
     .reply(200, (uri, requestBody: Record<string, any>) => {
       const { blinds, position } = requestBody.variables;
       const responseBlinds = [];

@@ -2,10 +2,13 @@ import axios from "axios";
 import {
   BlindInfo,
   BlindState,
+  GetUserInfoResponse,
   MUTATION_UPDATE_BLINDS_POSITION,
   QUERY_GET_BLINDS_STATE,
   QUERY_GET_USER_INFO,
+  UpdateBlindsResponse,
 } from "./config";
+import { formatBlindInfo, formatBlindState } from "./util";
 
 interface ApiProps {
   /** mysmartblinds account username */
@@ -28,49 +31,6 @@ interface SignInToken {
   refresh_token: string;
   access_token: string;
   token_type: string;
-}
-
-interface UpdateBlindsResponseBlind {
-  encodedMacAddress: string;
-  batteryLevel: number;
-  rssi: number;
-  position: number;
-}
-
-interface UpdateBlindsPosition {
-  updateBlindsPosition: Array<UpdateBlindsResponseBlind>;
-}
-
-interface UpdateBlindsResponse {
-  data: UpdateBlindsPosition;
-}
-
-interface GetUserInfoRoom {
-  id: string;
-  name: string;
-  deleted: boolean;
-}
-
-interface GetUserInfoBlind {
-  name: string;
-  encodedMacAddress: string;
-  encodedPasskey: string;
-  roomId: string;
-  deleted: boolean;
-  batteryPercent: number;
-}
-
-interface GetUserInfoUser {
-  rooms: Array<GetUserInfoRoom>;
-  blinds: Array<GetUserInfoBlind>;
-}
-
-interface GetUserInfo {
-  user: GetUserInfoUser;
-}
-
-interface GetUserInfoResponse {
-  data: GetUserInfo;
 }
 
 const APP_USER_AGENT = "MySmartBlinds/5 CFNetwork/1121.2.2 Darwin/19.3.0";
@@ -195,7 +155,7 @@ export default class Api {
 
     console.debug("GetBlindsState response: ", response.data);
 
-    return this.formatBlindsResponse(response.data.data.blindsState);
+    return response.data.data.blindsState.map(formatBlindState);
   }
 
   private async requestBlinds(): Promise<Array<BlindInfo>> {
@@ -213,26 +173,13 @@ export default class Api {
       requestConfig
     );
 
-    const roomsById = new Map<string, string>();
-
-    (response.data?.data?.user?.rooms || [])
+    const roomsById = (response.data?.data?.user?.rooms ?? [])
       .filter((room) => !room.deleted)
-      .reduce((acc, room) => {
-        acc.set(room.id, room.name);
-        return acc;
-      }, roomsById);
+      .reduce((rooms, room) => rooms.set(room.id, room.name), new Map<string, string>());
 
-    const blinds = (response.data?.data?.user?.blinds || [])
+    const blinds = (response.data?.data?.user?.blinds ?? [])
       .filter((room) => !room.deleted)
-      .map((blind) => ({
-        id: blind.encodedMacAddress,
-        name: blind.name,
-        encodedPasskey: blind.encodedPasskey,
-        room: roomsById.get(blind.roomId) ?? "unknown",
-        batteryLevel: blind.batteryPercent,
-      }));
-
-    console.debug("GetUserInfo blinds response:", blinds);
+      .map((blind) => formatBlindInfo(blind, roomsById));
 
     return blinds;
   }
@@ -252,19 +199,7 @@ export default class Api {
 
     console.debug("UpdateBlindsPosition response: %s", response.data.data.updateBlindsPosition);
 
-    return this.formatBlindsResponse(response.data.data.updateBlindsPosition);
-  }
-
-  private formatBlindsResponse(response: Array<UpdateBlindsResponseBlind>): Array<BlindState> {
-    return response.map((blind) => ({
-      id: blind.encodedMacAddress,
-      // hub doesn't always report a battery level, so if it's 0, set a default low value
-      // this eases integration with platforms like homebridge/home assistant that will complain
-      // about low batteries
-      batteryLevel: blind.batteryLevel == 0 ? 20 : blind.batteryLevel,
-      signalStrength: blind.rssi,
-      position: blind.position,
-    }));
+    return response.data.data.updateBlindsPosition.map(formatBlindState);
   }
 
   private async getHeaders(): Promise<Record<string, string>> {

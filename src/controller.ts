@@ -21,6 +21,8 @@ const BLINDS_UPDATE_THROTTLE_MS = 10 * 1000; // 10 seconds
 
 const CONNECTION_RETRY_DELAY_MS = 30 * 1000; // 30 seconds
 
+export const UPDATE_QUEUE_DELAY_MS = 750;
+
 const normalize = (name: string): string => name.replace(/\s/g, "_").toLowerCase();
 
 /**
@@ -35,8 +37,8 @@ export default class Controller {
   private updateTimer?: NodeJS.Timeout;
 
   private updateQueue = new Set<QueuedBlindUpdate>();
-  private blindsByRoom = new Map<string, Map<string, BlindInfo>>();
-  private blindsById = new Map<string, BlindInfo>();
+  readonly blindsByRoom = new Map<string, Map<string, BlindInfo>>();
+  readonly blindsById = new Map<string, BlindInfo>();
 
   constructor({ api, mqttHost, mqttPrefix }: ControllerProps) {
     this.api = api;
@@ -48,7 +50,7 @@ export default class Controller {
    * Bootstrap the mqtt broker and subscribe to topics for all available blinds
    */
   public initialize = async (): Promise<void> => {
-    await this.findBlinds();
+    await this.updateAvailableBlinds();
 
     // reset the connection before initializing, in case of reinitialization
     this.client?.end();
@@ -58,40 +60,14 @@ export default class Controller {
     this.client.on("error", (error) => {
       console.error("MQTT connection error: %s; will retry after a delay", error);
     });
-
-    this.client.on("connect", () => {
-      console.info("Connected to home automation mqtt broker");
-
-      this.client?.publish(`${this.mqttPrefix}/availability`, "online", { qos: 1, retain: true });
-
-      this.client?.subscribe(`${this.mqttPrefix}/refresh`);
-      // matches "prefix/room_name/blind_name/set"
-      this.client?.subscribe(`${this.mqttPrefix}/+/+/set`, { qos: 2 });
-
-      this.updateBlindsState();
-    });
-
-    this.client.on("message", (topic, message) => {
-      if (topic === `${this.mqttPrefix}/refresh`) {
-        return this.updateBlindsState();
-      }
-
-      const [, roomName, blindName, action] = topic.split("/");
-
-      const blind = this.blindsByRoom.get(roomName)?.get(blindName);
-      if (blind && action === "set") {
-        const position = +message.toString();
-        return this.queueBlindsUpdate({ blinds: [blind.id], position });
-      }
-
-      console.warn("No handler for topic: %s", topic);
-    });
+    this.client.on("connect", this.onConnect.bind(this));
+    this.client.on("message", this.onMessage.bind(this));
   };
 
   /**
    * Request all available blinds from the hub
    */
-  public findBlinds = async (): Promise<void> => {
+  public updateAvailableBlinds = async (): Promise<void> => {
     const blinds = await this.api.findBlinds();
 
     if (!blinds || blinds.length === 0) {
@@ -111,12 +87,6 @@ export default class Controller {
       this.blindsByRoom.get(roomName)?.set(blindName, blind);
       this.blindsById.set(blind.id, blind);
     });
-
-    const topics = [`${this.mqttPrefix}/refresh`].concat(
-      Array.from(this.blindsById).map(([, blind]) => `${this.getMqttTopic(blind)}/set`)
-    );
-
-    console.info("Registering topics: %s", topics);
   };
 
   /**
@@ -143,6 +113,40 @@ export default class Controller {
       },
       reconnectPeriod: CONNECTION_RETRY_DELAY_MS,
     });
+  };
+
+  private onConnect = () => {
+    console.info("Connected to home automation mqtt broker");
+
+    this.client?.publish(`${this.mqttPrefix}/availability`, "online", { qos: 1, retain: true });
+
+    this.client?.subscribe(`${this.mqttPrefix}/refresh`);
+    // matches "prefix/room_name/blind_name/set"
+    this.client?.subscribe(`${this.mqttPrefix}/+/+/set`, { qos: 2 });
+
+    const topics = [`${this.mqttPrefix}/refresh`].concat(
+      Array.from(this.blindsById).map(([, blind]) => `${this.getMqttTopic(blind)}/set`)
+    );
+
+    console.info("Registered topics: %s", topics);
+
+    this.updateBlindsState();
+  };
+
+  private onMessage = (topic: string, message: Buffer) => {
+    if (topic === `${this.mqttPrefix}/refresh`) {
+      return this.updateBlindsState();
+    }
+
+    const [, roomName, blindName, action] = topic.split("/");
+
+    const blind = this.blindsByRoom.get(roomName)?.get(blindName);
+    if (blind && action === "set") {
+      const position = +message.toString();
+      return this.queueBlindsUpdate({ blinds: [blind.id], position });
+    }
+
+    console.warn("No handler for topic: %s", topic);
   };
 
   /**
@@ -174,7 +178,7 @@ export default class Controller {
         Object.entries(blindsByPosition).forEach(([position, blinds]) => {
           this.setBlindsPosition(blinds, +position);
         });
-      }, 750);
+      }, UPDATE_QUEUE_DELAY_MS);
     }
   };
 
@@ -182,7 +186,7 @@ export default class Controller {
     console.info("Processing request to update blinds position");
 
     if (isNaN(position)) {
-      console.warn("Received invalid positon: %s; ignoring");
+      console.warn("Received invalid positon: %s; ignoring", position);
       return;
     }
 
