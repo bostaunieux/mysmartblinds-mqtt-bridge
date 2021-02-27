@@ -1,6 +1,6 @@
 {
   "name": "@bostaunieux/mysmartblinds-mqtt-bridge",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Node service for controlling a mysmartblinds hub",
   "author": "bostaunieux",
   "repository": {
