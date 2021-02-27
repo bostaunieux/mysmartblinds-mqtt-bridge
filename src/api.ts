@@ -9,6 +9,7 @@ import {
   UpdateBlindsResponse,
 } from "./config";
 import { formatBlindInfo, formatBlindState } from "./util";
+import logger from "./logger";
 
 interface ApiProps {
   /** mysmartblinds account username */
@@ -56,7 +57,7 @@ export default class Api {
     try {
       return await this.requestBlinds();
     } catch (error) {
-      console.error("Failed finding available blinds", error);
+      logger.error("Failed finding available blinds: %o", error);
       return null;
     }
   }
@@ -70,7 +71,7 @@ export default class Api {
     try {
       return await this.requestBlindsState(blinds);
     } catch (error) {
-      console.error("Failed getting blinds status", error);
+      logger.error("Failed getting blinds status: %o", error);
       return null;
     }
   }
@@ -85,7 +86,7 @@ export default class Api {
     try {
       return await this.requestPositionUpdate(blinds, position);
     } catch (error) {
-      console.error("Failed updating blinds position", error);
+      logger.error("Failed updating blinds position: %o", error);
       return null;
     }
   }
@@ -94,15 +95,15 @@ export default class Api {
     const now = new Date().getTime();
 
     if (this.storedToken?.expiry && this.storedToken.expiry > now) {
-      console.info("Using existing auth token");
+      logger.debug("Using existing auth token");
       return this.storedToken.id;
     }
 
-    console.info("Fetching new auth token");
+    logger.info("Fetching new auth token...");
 
     const { id, expiry } = await this.requestAuth0Token();
 
-    console.info("Received new token, valid until: %s", new Date(expiry).toISOString());
+    logger.info("Received new token with expiration: %s", new Date(expiry).toISOString());
 
     // store the newly fetched token
     this.storedToken = { id, expiry };
@@ -139,7 +140,7 @@ export default class Api {
   }
 
   private async requestBlindsState(blinds: Array<string>): Promise<Array<BlindState>> {
-    console.debug("Requesting blinds status");
+    logger.debug("Requesting blinds status...");
 
     const headers = await this.getHeaders();
     const requestConfig = { headers };
@@ -153,13 +154,13 @@ export default class Api {
       requestConfig
     );
 
-    console.debug("GetBlindsState response: ", response.data);
+    logger.debug("Received GetBlindsState response: %o", response.data.data);
 
     return response.data.data.blindsState.map(formatBlindState);
   }
 
   private async requestBlinds(): Promise<Array<BlindInfo>> {
-    console.debug("Searching for blinds");
+    logger.debug("Looking up blinds...");
 
     const headers = await this.getHeaders();
     const requestConfig = { headers };
@@ -173,7 +174,9 @@ export default class Api {
       requestConfig
     );
 
-    const roomsById = (response.data?.data?.user?.rooms ?? [])
+    logger.debug("Received GetUserInfo response: %o", response.data.data);
+
+    const roomsById = (response.data.data?.user?.rooms ?? [])
       .filter((room) => !room.deleted)
       .reduce((rooms, room) => rooms.set(room.id, room.name), new Map<string, string>());
 
@@ -185,6 +188,8 @@ export default class Api {
   }
 
   private async requestPositionUpdate(blinds: Array<string>, position: number): Promise<Array<BlindState>> {
+    logger.debug("Requesting blind position update...");
+
     const headers = await this.getHeaders();
     const requestConfig = { headers };
 
@@ -197,7 +202,7 @@ export default class Api {
       requestConfig
     );
 
-    console.debug("UpdateBlindsPosition response: %s", response.data.data.updateBlindsPosition);
+    logger.debug("Received UpdateBlindsPosition response: %o", response.data.data);
 
     return response.data.data.updateBlindsPosition.map(formatBlindState);
   }

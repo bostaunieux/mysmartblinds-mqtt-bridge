@@ -2,6 +2,7 @@ import { invertBy, throttle } from "lodash";
 import mqtt, { MqttClient } from "mqtt";
 import Api from "./api";
 import { BlindInfo, BlindState } from "./config";
+import logger from "./logger";
 
 interface ControllerProps {
   /** MQTT broker host */
@@ -58,7 +59,7 @@ export default class Controller {
     this.client = this.getConnection();
 
     this.client.on("error", (error) => {
-      console.error("MQTT connection error: %s; will retry after a delay", error);
+      logger.error("MQTT connection error: %s; will retry after a delay", error);
     });
     this.client.on("connect", this.onConnect.bind(this));
     this.client.on("message", this.onMessage.bind(this));
@@ -94,7 +95,7 @@ export default class Controller {
    * requests are throttled.
    */
   public updateBlindsState = throttle(async (): Promise<void> => {
-    console.info("Processing request to get blinds status");
+    logger.info("Processing request to get blinds status...");
 
     const blindIds = Array.from(this.blindsById).map(([, blind]) => blind.id);
 
@@ -116,7 +117,7 @@ export default class Controller {
   };
 
   private onConnect = () => {
-    console.info("Connected to home automation mqtt broker");
+    logger.info("Connected to home automation mqtt broker");
 
     this.client?.publish(`${this.mqttPrefix}/availability`, "online", { qos: 1, retain: true });
 
@@ -128,7 +129,7 @@ export default class Controller {
       Array.from(this.blindsById).map(([, blind]) => `${this.getMqttTopic(blind)}/set`)
     );
 
-    console.info("Registered topics: %s", topics);
+    logger.info("Registered topics: %o", topics);
 
     this.updateBlindsState();
   };
@@ -146,7 +147,7 @@ export default class Controller {
       return this.queueBlindsUpdate({ blinds: [blind.id], position });
     }
 
-    console.warn("No handler for topic: %s", topic);
+    logger.warn("No handler for topic: %s", topic);
   };
 
   /**
@@ -183,16 +184,16 @@ export default class Controller {
   };
 
   private setBlindsPosition = async (blindIds: Array<string>, position: number) => {
-    console.info("Processing request to update blinds position");
+    logger.info("Processing request to update blinds position...");
 
     if (isNaN(position)) {
-      console.warn("Received invalid positon: %s; ignoring", position);
+      logger.warn("Received invalid positon: %s; ignoring", position);
       return;
     }
 
     position = Math.max(0, Math.min(180, position));
 
-    console.info("Changing position to: %s for blinds: %s", position, blindIds.join(", "));
+    logger.info("Changing position to: %s for blinds: %s", position, blindIds.join(", "));
     const updatedBlinds = await this.api.updateTiltPosition(blindIds, position);
 
     updatedBlinds && this.publishStateChange(updatedBlinds);
@@ -206,7 +207,7 @@ export default class Controller {
       const blindEntry = this.blindsById.get(blind.id);
 
       if (!blindEntry) {
-        console.error("Ignoring update request received for an unknown blind: %s", blind);
+        logger.error("Ignoring update request received for an unknown blind: %s", blind);
         return;
       }
 

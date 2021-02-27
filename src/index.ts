@@ -1,5 +1,6 @@
 import Api from "./api";
 import Controller from "./controller";
+import logger from "./logger";
 
 const {
   MSB_USER: username,
@@ -9,7 +10,7 @@ const {
 } = process.env;
 
 process.on("exit", function () {
-  console.info("Exiting...");
+  logger.info("Exiting...");
 });
 
 // catch ctrl+c event and exit normally
@@ -18,17 +19,17 @@ process.on("SIGINT", function () {
 });
 
 if (!username || !password) {
-  console.error("Missing required username and/or password properties");
+  logger.error("Missing required username and/or password properties");
   process.exit(1);
 }
 
 if (!mqttHost) {
-  console.error("Missing required mqtt host property");
+  logger.error("Missing required mqtt host property");
   process.exit(1);
 }
 
 if (mqttPrefix.includes("/")) {
-  console.error("Mqtt prefix property cannot contain any forward slashes");
+  logger.error("Mqtt prefix property cannot contain any forward slashes");
   process.exit(1);
 }
 
@@ -38,8 +39,8 @@ const init = async () => {
   try {
     const controller = new Controller({ api, mqttHost, mqttPrefix });
     await controller.initialize();
-  } catch (e) {
-    console.error("Encountered fatal error: %s", e);
+  } catch (error) {
+    logger.error("Encountered fatal error: %s", error);
     process.exit(1);
   }
 };
