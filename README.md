@@ -1,6 +1,6 @@
 # mysmartblinds-mqtt-bridge
 
-[![build](https://github.com/bostaunieux/mysmartblinds-mqtt-bridge/actions/workflows/node-ci.yml/badge.svg)](https://github.com/bostaunieux/mysmartblinds-mqtt-bridge/actions/workflows/node-ci.yml)
+[![build](https://github.com/bostaunieux/mysmartblinds-mqtt-bridge/actions/workflows/node-ci.yml/badge.svg)](https://github.com/bostaunieux/mysmartblinds-mqtt-bridge/actions/workflows/node-ci.yml) [![codecov](https://codecov.io/gh/bostaunieux/mysmartblinds-mqtt-bridge/branch/master/graph/badge.svg?token=YLNX2P16W9)](https://codecov.io/gh/bostaunieux/mysmartblinds-mqtt-bridge)
 
 ## Overview
 
