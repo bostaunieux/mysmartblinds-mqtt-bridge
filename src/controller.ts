@@ -139,7 +139,7 @@ export default class Controller {
       return this.updateBlindsState();
     }
 
-    const [, roomName, blindName, action] = topic.split("/");
+    const [roomName, blindName, action] = topic.substring(this.mqttPrefix.length + 1).split("/");
 
     const blind = this.blindsByRoom.get(roomName)?.get(blindName);
     if (blind && action === "set") {
