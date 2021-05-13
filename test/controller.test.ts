@@ -37,7 +37,7 @@ describe("Controller", () => {
       formatBlindInfo(MOCK_BLIND_2, rooms),
     ]);
 
-    const iStreamMock: IStream = (jest.fn() as unknown) as IStream;
+    const iStreamMock: IStream = jest.fn() as unknown as IStream;
     mqttMock.connect.mockReturnValue(new ClientMock(() => iStreamMock, {}));
 
     api = new Api({ username: MOCK_USERNAME, password: MOCK_PASSWORD });
