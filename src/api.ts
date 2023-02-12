@@ -34,7 +34,7 @@ interface SignInToken {
   token_type: string;
 }
 
-const APP_USER_AGENT = "MySmartBlinds/5 CFNetwork/1121.2.2 Darwin/19.3.0";
+const APP_USER_AGENT = "MySmartBlinds/1 CFNetwork/1404.0.5 Darwin/22.3.0";
 export const APP_CLIENT_ID = "1d1c3vuqWtpUt1U577QX5gzCJZzm8WOB";
 
 /**
