@@ -26,15 +26,6 @@ interface TokenDetails {
   expiry: number;
 }
 
-// oauth signin response
-interface SignInToken {
-  id_token: string;
-  scope: string;
-  refresh_token: string;
-  access_token: string;
-  token_type: string;
-}
-
 const APP_USER_AGENT = "MySmartBlinds/1 CFNetwork/1404.0.5 Darwin/22.3.0";
 export const APP_CLIENT_ID = "1d1c3vuqWtpUt1U577QX5gzCJZzm8WOB";
 
