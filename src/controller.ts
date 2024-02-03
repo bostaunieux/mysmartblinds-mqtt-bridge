@@ -108,7 +108,7 @@ export default class Controller {
     return mqtt.connect(this.mqttHost, {
       will: {
         topic: `${this.mqttPrefix}/availability`,
-        payload: "offline",
+        payload: Buffer.from("offline", "utf8"),
         qos: 1,
         retain: true,
       },
@@ -126,7 +126,7 @@ export default class Controller {
     this.client?.subscribe(`${this.mqttPrefix}/+/+/set`, { qos: 2 });
 
     const topics = [`${this.mqttPrefix}/refresh`].concat(
-      Array.from(this.blindsById).map(([, blind]) => `${this.getMqttTopic(blind)}/set`)
+      Array.from(this.blindsById).map(([, blind]) => `${this.getMqttTopic(blind)}/set`),
     );
 
     logger.info("Registered topics: %o", topics);
