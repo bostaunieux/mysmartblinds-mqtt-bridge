@@ -145,7 +145,7 @@ export default class Api {
         query: QUERY_GET_BLINDS_STATE,
         variables: { blinds },
       },
-      requestConfig
+      requestConfig,
     );
 
     logger.info("Received GetBlindsState response: %o", response.data);
@@ -165,7 +165,7 @@ export default class Api {
         query: QUERY_GET_USER_INFO,
         variables: null,
       },
-      requestConfig
+      requestConfig,
     );
 
     logger.debug("Received GetUserInfo response: %o", response.data.data);
@@ -193,7 +193,7 @@ export default class Api {
         query: MUTATION_UPDATE_BLINDS_POSITION,
         variables: { position, blinds },
       },
-      requestConfig
+      requestConfig,
     );
 
     logger.debug("Received UpdateBlindsPosition response: %o", response.data.data);

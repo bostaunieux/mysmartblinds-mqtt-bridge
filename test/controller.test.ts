@@ -180,7 +180,7 @@ describe("Controller", () => {
       expect(api.updateTiltPosition).toHaveBeenCalledTimes(1);
       expect(api.updateTiltPosition).toHaveBeenCalledWith(
         [MOCK_BLIND_1.encodedMacAddress, MOCK_BLIND_2.encodedMacAddress],
-        100
+        100,
       );
     });
 
