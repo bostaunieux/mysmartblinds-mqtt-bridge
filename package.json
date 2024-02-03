@@ -21,7 +21,6 @@
     "node": "^18.0.0 || >=20.0.0"
   },
   "dependencies": {
-    "auth0": "^3.2.0",
     "axios": "^1.6.0",
     "axios-retry": "^4.0.0",
     "dotenv": "^16.3.1",

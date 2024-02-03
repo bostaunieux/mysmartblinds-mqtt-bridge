@@ -1,36 +1,17 @@
-import { jest } from "@jest/globals";
 import nock from "nock";
-import { AuthenticationClient } from "auth0";
 import Api from "../src/api";
 import {
   MOCK_BLIND_1,
   MOCK_BLIND_2,
+  mockLogin,
+  mockFailedLogin,
   mockFindBlinds,
   mockGetBlindsState,
   MOCK_BLIND_STATE_1,
   MOCK_PASSWORD,
   MOCK_USERNAME,
   mockUpdateBlindsPosition,
-  MOCK_TOKEN,
 } from "./fixtures";
-
-jest.mock("auth0");
-const AuthenticationClientMock = AuthenticationClient as jest.Mocked<typeof AuthenticationClient>;
-
-const mockLogin = () => {
-  AuthenticationClientMock.prototype.passwordGrant.mockImplementation(() =>
-    Promise.resolve({
-      access_token: MOCK_TOKEN,
-      id_token: MOCK_TOKEN,
-      token_type: "Bearer",
-      expires_in: 100,
-    })
-  );
-};
-
-const mockFailedLogin = () => {
-  AuthenticationClientMock.prototype.passwordGrant.mockImplementation(() => Promise.reject("Mock auth failure"));
-};
 
 describe("Api", () => {
   let api: Api;
@@ -39,7 +20,6 @@ describe("Api", () => {
     if (!nock.isActive()) {
       nock.activate();
     }
-    AuthenticationClientMock.mockClear();
 
     api = new Api({
       username: MOCK_USERNAME,

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { AuthenticationClient } from "auth0";
+
 import {
   BlindInfo,
   BlindState,
@@ -17,6 +17,15 @@ interface ApiProps {
   username: string;
   /** mysmartblinds account password */
   password: string;
+}
+
+interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  scope?: string | undefined;
+  id_token?: string | undefined;
+  refresh_token?: string | undefined;
 }
 
 interface TokenDetails {
@@ -104,30 +113,25 @@ export default class Api {
   }
 
   private async requestAuth0Token(): Promise<TokenDetails> {
-    const auth0 = new AuthenticationClient({
-      domain: "mysmartblinds.auth0.com",
-      clientId: APP_CLIENT_ID,
-      clientSecret: "",
-    });
-
-    let response;
-    try {
-      response = await auth0.passwordGrant({
+    const response = await axios.post<TokenResponse>(
+      "https://mysmartblinds.auth0.com/oauth/token",
+      {
         username: this.username,
         password: this.password,
         realm: "Username-Password-Authentication",
+        grant_type: "http://auth0.com/oauth/grant-type/password-realm",
         scope: "openid email offline_access",
-      });
-    } catch (e) {
-      console.warn(`Failed to authenticate with error: ${e}`);
-    }
+        client_id: "1d1c3vuqWtpUt1U577QX5gzCJZzm8WOB",
+      },
+      {},
+    );
 
-    if (!response?.id_token || response?.token_type !== "Bearer") {
+    if (!response?.data?.id_token || response.data.token_type !== "Bearer") {
       throw new Error("Failed fetching auth token");
     }
 
     return {
-      id: response.access_token,
+      id: response.data.access_token,
       // token expires in 10 hours
       expiry: new Date().getTime() + 18 * 60 * 60 * 1000,
     };

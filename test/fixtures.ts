@@ -6,13 +6,12 @@ export const MOCK_PASSWORD = "test-password";
 export const MOCK_TOKEN = "test-token";
 
 const LOGIN_REQUEST_BODY = {
-  scope: "openid offline_access",
-  grant_type: "password",
-  client_id: "1d1c3vuqWtpUt1U577QX5gzCJZzm8WOB",
-  connection: "Username-Password-Authentication",
-  device: "MySmartBlinds MQTT",
   username: MOCK_USERNAME,
   password: MOCK_PASSWORD,
+  realm: "Username-Password-Authentication",
+  grant_type: "http://auth0.com/oauth/grant-type/password-realm",
+  scope: "openid email offline_access",
+  client_id: "1d1c3vuqWtpUt1U577QX5gzCJZzm8WOB",
 };
 
 export const MOCK_ROOM = { id: "12345", name: "Office", deleted: false };
@@ -48,10 +47,12 @@ export const MOCK_BLIND_STATE_2 = {
 };
 
 export const mockLogin = (): Scope =>
-  nock("https://mysmartblinds.auth0.com").post("/oauth/ro", LOGIN_REQUEST_BODY).reply(200, { id_token: MOCK_TOKEN });
+  nock("https://mysmartblinds.auth0.com")
+    .post("/oauth/token", LOGIN_REQUEST_BODY)
+    .reply(200, { id_token: MOCK_TOKEN, token_type: "Bearer" });
 
 export const mockFailedLogin = (): Scope =>
-  nock("https://mysmartblinds.auth0.com").post("/oauth/ro", LOGIN_REQUEST_BODY).reply(200, {});
+  nock("https://mysmartblinds.auth0.com").post("/oauth/token", LOGIN_REQUEST_BODY).reply(200, {});
 
 export const mockFindBlinds = (): Scope =>
   nock("https://api.mysmartblinds.com")
